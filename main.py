@@ -25,3 +25,36 @@ if __name__ == "__main__":
         logger.error("Some Error occurrred...{}".format(err))
 
 
+##########
+import subprocess
+import datetime
+import getpass
+from loguru import logger
+
+def perform_backup(container_id, database_names_file):
+
+    with open(database_names_file, 'r') as f:
+        database_names = f.read().splitlines()
+        logger.debug(f"Database Names : {database_names}")
+
+    sudo_password = getpass.getpass("Enter the sudo password: ")
+
+    for database_name in database_names:
+
+        command = [
+            'sudo', '-S', 'docker', 'exec', '-t', container_id, 'pg_dump', '-c', '-U', 'postgres', database_name
+        ]
+
+        timestamp = datetime.datetime.now().strftime('%d-%m-%Y_%H_%M_%S')
+        filename = f"dump_{database_name}_{timestamp}.sql"
+
+        with open(filename, 'w') as f:
+            logger.debug(f"Taking backup of {database_name}...")
+            subprocess.run(command, input=sudo_password, encoding='utf-8', stdout=f)
+
+
+
+container_id = "aabf8316e748"
+database_names_file = "database_names.txt"
+logger.debug(f"Container ID : {container_id}")
+perform_backup(container_id, database_names_file)
